@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Race Details</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .detail-card {
+            background: white;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .silk-large {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 5px;
+        }
+        .horse-name {
+            font-size: 1.2em;
+            font-weight: bold;
+            color: #007bff;
+        }
+        .pedigree {
+            color: #6c757d;
+            font-style: italic;
+        }
+        .last-runs {
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 5px;
+            font-family: monospace;
+        }
+        .equipment-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            margin: 2px;
+        }
+        .equipment-al { background: #28a745; color: white; }
+        .equipment-sh { background: #007bff; color: white; }
+        .equipment-eq { background: #ffc107; color: black; }
+    </style>
+</head>
+<body>
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col-12">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2><i class="fas fa-trophy"></i> Race Details</h2>
+                    <a href="/" class="btn btn-outline-primary">
+                        <i class="fas fa-arrow-left"></i> Back to Calendar
+                    </a>
+                </div>
+                
+                <div id="raceDetails">
+                    <div class="text-center p-5">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Loading...</span>
+                        </div>
+                        <p class="mt-3">Loading race details...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Load race details
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRaceDetails();
+        });
+        
+        async function loadRaceDetails() {
+            try {
+                const response = await fetch(`/api/race_details/{{ race_id }}`);
+                const race = await response.json();
+                
+                if (race.error) {
+                    throw new Error(race.error);
+                }
+                
+                displayRaceDetails(race);
+                
+            } catch (error) {
+                document.getElementById('raceDetails').innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i> 
+                        Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        function displayRaceDetails(race) {
+            const container = document.getElementById('raceDetails');
+            container.innerHTML = `
+                <div class="detail-card">
+                    <div class="row mb-4">
+                        <div class="col-md-8">
+                            <h3 class="horse-name">${race.title}</h3>
+                            <p class="pedigree">${race.class}</p>
+                            <div class="row mt-3">
+                                <div class="col-md-3">
+                                    <strong>Distance:</strong><br>${race.distance}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Time:</strong><br>${race.time}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Venue:</strong><br>${race.venue}
+                                </div>
+                                <div class="col-md-3">
+                                    <strong>Date:</strong><br>${race.date}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-center">
+                            <img src="${race.horses && race.horses[0] ? race.horses[0].silk : ''}" 
+                                 class="silk-large" alt="Silk">
+                        </div>
+                    </div>
+                    
+                    ${race.prizes ? `
+                        <div class="alert alert-success">
+                            <h5><i class="fas fa-coins"></i> Prize Money</h5>
+                            <div class="row">
+                                <div class="col-md-2"><strong>Winner:</strong> ₹${race.prizes.winner}</div>
+                                <div class="col-md-2"><strong>Second:</strong> ₹${race.prizes.second}</div>
+                                <div class="col-md-2"><strong>Third:</strong> ₹${race.prizes.third}</div>
+                                <div class="col-md-2"><strong>Fourth:</strong> ₹${race.prizes.fourth}</div>
+                                <div class="col-md-2"><strong>Total:</strong> ₹${race.prizes.total}</div>
+                            </div>
+                        </div>
+                    ` : ''}
+                    
+                    ${race.record ? `
+                        <div class="alert alert-info">
+                            <h5><i class="fas fa-clock"></i> Track Record</h5>
+                            <strong>${race.record.date}:</strong> ${race.record.details}
+                        </div>
+                    ` : ''}
+                    
+                    <h4 class="mt-4 mb-3">
+                        <i class="fas fa-horse"></i> Horses (${race.horses ? race.horses.length : 0})
+                    </h4>
+                    
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>No</th>
+                                    <th>Draw</th>
+                                    <th>Horse</th>
+                                    <th>Pedigree</th>
+                                    <th>Owner</th>
+                                    <th>Trainer</th>
+                                    <th>Jockey</th>
+                                    <th>Weight</th>
+                                    <th>Equipment</th>
+                                    <th>Rating</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${race.horses ? race.horses.map(horse => `
+                                    <tr>
+                                        <td><strong>${horse.number}</strong></td>
+                                        <td>${horse.draw || '-'}</td>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                ${horse.silk ? `<img src="${horse.silk}" class="silk-large me-3">` : ''}
+                                                <div>
+                                                    <strong>${horse.name}</strong>
+                                                    ${horse.ex_name ? `<br><small class="text-danger">Ex: ${horse.ex_name}</small>` : ''}
+                                                    <br><small class="pedigree">${horse.pedigree}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>${horse.owner}</td>
+                                        <td>${horse.trainer}</td>
+                                        <td>${horse.jockey}</td>
+                                        <td><strong>${horse.weight}</strong></td>
+                                        <td>
+                                            ${horse.equipment.al ? `<span class="equipment-badge equipment-al">AL: ${horse.equipment.al}</span>` : ''}
+                                            ${horse.equipment.sh ? `<span class="equipment-badge equipment-sh">SH: ${horse.equipment.sh}</span>` : ''}
+                                            ${horse.equipment.eq ? `<span class="equipment-badge equipment-eq">EQ: ${horse.equipment.eq}</span>` : ''}
+                                        </td>
+                                        <td>
+                                            <strong>${horse.rating}</strong>
+                                            ${horse.penalty ? `<small class="text-muted">(${horse.penalty})</small>` : ''}
+                                        </td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="11">No horse data available</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
